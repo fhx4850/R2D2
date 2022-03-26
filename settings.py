@@ -1,1 +1,2 @@
 TEMPLATEDIR = 'templates'
+RESOURCEDIR = 'resources'

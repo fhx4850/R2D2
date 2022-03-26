@@ -1,19 +1,17 @@
 import socket
 from threading import Thread
 from views import index
-import os
-
+from urls import url_path
+from routing.url import UrlRouting
+import settings
 
 class IpTcpServer:
     def __init__(self, ip: str, port: int):
         self._serv_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._serv_socket.bind((ip, port))
-        self._URLS = {
-            '/': index,
-            '/test': index,
-        }
+        UrlRouting(url_path)
+        self._URLS = UrlRouting.URLS
         self.dd = ""
-        self.RES_PATH = 'resources/'
         
     def run(self):
         self._serv_listen()
@@ -65,10 +63,14 @@ class IpTcpServer:
     def _get_request_string(self, request):
         parsed = request.split(' ')
         method = parsed[0]
-        url = parsed[1]        
+        url = parsed[1]
+        file_path = None
+        if url.find('.') != -1:
+            path = settings.RESOURCEDIR + str(url).partition(settings.RESOURCEDIR)[2]
+            file_path = self._find_file(path)            
         
-        file_path = self._find_file(url)
         return (method, url, file_path)
+    
     
     def _create_headers(self, method, url):
         if not method == 'GET':
@@ -87,10 +89,9 @@ class IpTcpServer:
         else:
             return self._URLS[url]()
         
-    def output_request_url(self, request):
-        # request_url = request.splitlines()
-        # print(request.decode('utf-8'))
-        pass
+    def output_request_log(self, request):
+        request_url = request.decode('utf-8')
+        print(str(request_url).splitlines()[0])
             
     def _client_thread(self, client):
         while True:
@@ -99,21 +100,8 @@ class IpTcpServer:
             client.send(response)
             client.close()
             break
-        self.output_request_url(request)
+        self.output_request_log(request)
         
     def _find_file(self, path):
         myfile = path.lstrip('/')
         return myfile
-        
-        # path_elem = url.lstrip('/').split('/')
-        # isFile = str(path_elem[-1]).find('.')
-        
-        # file_path = None
-        # if isFile != -1:
-        #     file_path = self.RES_PATH
-        #     for i in path_elem[:-1]:
-        #         file_path += i + '/'
-            
-        #     for root, dirs, files in os.walk(file_path):
-        #         if 'phoo.jpg' in files:
-        #             print('good')
